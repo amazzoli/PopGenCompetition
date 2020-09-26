@@ -1,0 +1,8 @@
+rhos	1,1,
+chis	15,1,
+fs	1.01,1,
+M	800
+stop_at_fix	false
+max_steps	200000
+traj_step	100
+init_state	100,2000,
