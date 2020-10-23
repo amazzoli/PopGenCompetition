@@ -31,44 +31,88 @@ class StocProc {
 };
 
 
-/* Gillespie algorithm for birth death processes */
+/* Abstract Gillespie algorithm for birth death processes */
 class GillespieBD : public StocProc {
 
     private:
-        /* Per-capita birth rates as list of functions having the state as argument */
-        vecRates birth_rates;
-        /* Per-capita birth rates as list of functions having the state as argument */
-        vecRates death_rates;
+
+        vecd weights;
+        double w_tot;
+
+    protected:
         /* Current state */
         vecd state;
         /* Current time */
         double time;
         /* Size of the state space */
-        int state_size;
-
+        virtual void update_weights(vecd& weights, double& w_tot) = 0;
+        
     public:
-        GillespieBD(vecRates birth_rates, vecRates death_rates, std::mt19937& generator);
+        GillespieBD(std::mt19937& generator);
         /* Run give the initial states, end condition, time scale, and number of step after which the stored trajectory is updated*/
-        void run(vecd init_state, endc_f end_condition, double time_scale, int traj_step);
+        void run(vecd& init_state, endc_f& end_condition, int traj_step);
         /* Override. Run having all the paramenters sepficied in the structure */
         void run(param& params);
         /* Print the stored state trajectory */
         void print_traj(std::string out_path) const;
         /* Override. Get the size of the state space */
-        const int state_dim() const { return state_size; }
+        virtual const int state_dim() const = 0;
 };
 
 
-/* Gillespie for Lotka Volterra */
-GillespieBD* gillespie_LV(param& params, std::mt19937& generator);
+/* Gillespie algorithm for 2-species Lotka Volterra  */
+class GillespieLV2 : public GillespieBD {
+
+    private:
+        /* Pop time scale */
+        double rhos[2];
+        /* Pop fitness */
+        double fs[2];
+        /* Pop competitive disadvantage */
+        double chis[2];
+        /* Pop size */
+        int M;
+
+    protected:
+        void update_weights(vecd& weights, double& w_tot);
+
+    public:
+        GillespieLV2(param& params, std::mt19937& generator);
+        const int state_dim() const { return 2; }
+};
+
+
+/* Gillespie algorithm for 2-species generalized Moran model (Plotkin 2010) */
+class GillespiePlot2 : public GillespieBD {
+
+    private:
+        /* Pop time scale */
+        double betas[2];
+        /* Pop fitness */
+        double alpha;
+        /* Pop size */
+        int M;
+
+    protected:
+        void update_weights(vecd& weights, double& w_tot);
+
+    public:
+        GillespiePlot2(param& params, std::mt19937& generator);
+        const int state_dim() const { return 2; }
+};
+
 
 /* Terminal condition after fin_time steps */
 endc_f endc_time(int fin_step);
+endc_a_f endc_a_time(int fin_step);
 
 /* Terminal condition after fin_time steps or if one of the species reaches fixation */
 endc_f endc_time_fixation(int fin_step);
+endc_a_f endc_a_time_fixation(int fin_step);
 
 /* Terminal condition that stops when a state hits its a bound */
 endc_f endc_passage(vecd up_bounds, vecd low_bounds);
+endc_a_f endc_a_passage(vecd up_bounds, vecd low_bounds);
+
 
 #endif

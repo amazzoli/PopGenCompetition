@@ -1,0 +1,8 @@
+betas	1,1.1,
+alpha	0.8
+M	500
+end_cond	time
+max_steps	5000
+traj_step	1
+init_state	250.0,250.0,
+N_real	1000

@@ -16,10 +16,10 @@ int main(int argc, char** argv) {
     param params = parse_param_file(data_dir + path + "/param.txt"); // Def in utils
 
     Timer timer;
-    GillespieBD* alg = gillespie_LV(params, generator);
+    StocProc* alg = new GillespieLV2(params, generator);
     (*alg).run(params);
     std::cout << timer.elapsed() << "\n";
-    (*alg).print_traj(data_dir + path + "\\traj.txt");
+    //(*alg).print_traj(data_dir + path + "\\traj.txt");
 
     timer.reset();
     SPEnsemble LVEnsemble = SPEnsemble(alg);

@@ -15,10 +15,12 @@ int main(int argc, char** argv) {
     param params = parse_param_file(full_dir + "param.txt"); // Def in utils
 
     // Building the process
-    GillespieBD* alg = gillespie_LV(params, generator);
+    //GillespieBD* alg = gillespie_LV(params, generator);
+    StocProc* alg = new GillespieLV2(params, generator);
     SPEnsemble* ensemble = new SPEnsemble(alg, false);
 
     // Algorithm
+    Timer timer;
     std::cout << "\n";
     compute_inv_prob_and_print(ensemble, params, full_dir + "inv_p.txt", generator);
 
@@ -27,11 +29,14 @@ int main(int argc, char** argv) {
     params.vecd["fs"][0] = params.vecd["fs"][1]; params.vecd["fs"][1] = aux_f;
     params.vecd["rhos"][0] = params.vecd["rhos"][1]; params.vecd["rhos"][1] = aux_rho;
     params.vecd["chis"][0] = params.vecd["chis"][1]; params.vecd["chis"][1] = aux_chi;
-    alg = gillespie_LV(params, generator);
+    //alg = gillespie_LV(params, generator);
+    delete alg;
+    alg = new GillespieLV2(params, generator);
+    
     ensemble = new SPEnsemble(alg, false);
     
     compute_inv_prob_and_print(ensemble, params, full_dir + "inv_p_switch.txt", generator);
-    std::cout << "\n";
+    std::cout << timer.elapsed() << "\n";
 
     delete alg;
     delete ensemble;

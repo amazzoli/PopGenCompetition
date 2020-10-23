@@ -1,16 +1,14 @@
 #include "gillespie.h"
 
 
-GillespieBD::GillespieBD(vecRates birth_rates, vecRates death_rates, std::mt19937& generator):
-birth_rates{birth_rates}, death_rates{death_rates}, StocProc{generator} {
-    if (birth_rates.size() != death_rates.size())
-        throw std::runtime_error("Birth and death rates of different sizes");
-    state = vecd(birth_rates.size());
-    state_size = state.size();
-};
+GillespieBD::GillespieBD(std::mt19937& generator) :
+StocProc{generator} { };
 
 
 void GillespieBD::run(param& params){
+
+    state = vecd(state_dim());
+    weights = vecd(state_dim() * 2);
     vecd init_state; 
     endc_f end_condition; 
     double time_scale;
@@ -27,47 +25,39 @@ void GillespieBD::run(param& params){
             throw std::runtime_error("End condition not valid");
 
         init_state = params.vecd.at("init_state");
-        time_scale = params.d.at("time_scale");
         traj_step = params.d.at("traj_step");
 
     } catch (std::exception) { throw std::runtime_error("Algorithm parameters not found"); }
 
-    run(init_state, end_condition, time_scale, traj_step);
+    run(init_state, end_condition, traj_step);
 }
 
 
-void GillespieBD::run(vecd init_state, endc_f end_condition, double time_scale, int traj_step) {
+void GillespieBD::run(vecd& init_state, endc_f& end_condition, int traj_step) {
 
     int step = 0;
     time = 0;
     state_traj = vec2d(0);
     time_traj = vecd(0);
-    vecd weights = vecd(state_size * 2);
     if (state.size() != init_state.size())
         throw std::runtime_error("Wrong size of the initial state");
     state = init_state;
     
     while (!end_condition(step, state)) {
 
-        double W = 0;
-        for(int i=0; i<state_size; i++){
-            weights[i] = birth_rates[i](state)*state[i] / time_scale;
-            weights[state_size + i] = death_rates[i](state)*state[i] / time_scale;
-            W += weights[i] + weights[state_size + i];
-        }
-
-        std::exponential_distribution<double> exp_dist(1/W);
+        update_weights(weights, w_tot);
+        std::exponential_distribution<double> exp_dist(1/w_tot);
         double dt = exp_dist(generator);
         time += dt;
 
         std::discrete_distribution<int> state_sample_dist (weights.begin(), weights.end());
         int state_sample = state_sample_dist(generator);
         // Birth event
-        if (state_sample < state_size) 
+        if (state_sample < state_dim()) 
             state[state_sample]++;
         // Death event
         else 
-            state[state_sample - state_size] = std::max(0.0, state[state_sample - state_size]-1);
+            state[state_sample - state_dim()] = std::max(0.0, state[state_sample - state_dim()]-1);
         
         if (step % traj_step == 0){
             state_traj.push_back(state);
@@ -79,61 +69,76 @@ void GillespieBD::run(vecd init_state, endc_f end_condition, double time_scale, 
 }
 
 
-void GillespieBD::print_traj(std::string path) const {
+GillespieLV2::GillespieLV2(param& params, std::mt19937& generator):
+GillespieBD{generator} {
 
-    std::ofstream file_r;
-    file_r.open(path);
-
-    file_r << "Time\t";
-    for (int s=0; s<state_traj[0].size(); s++)
-        file_r << "n" << s << "\t";
-    file_r << "\n";
-
-    for (int t=0; t<time_traj.size(); t++){
-        file_r << time_traj[t] << "\t";
-        for (const int& s: state_traj[t])
-            file_r << s << "\t";
-        file_r << "\n";
-    }
-    file_r.close();
-}
-
-
-GillespieBD* gillespie_LV(param& params, std::mt19937& generator){
-
-    vecd rhos, fs, chis;
-    double M;
     try{
-        rhos = params.vecd.at("rhos");
-        fs = params.vecd.at("fs");
-        chis = params.vecd.at("chis");
+        rhos[0] = params.vecd.at("rhos")[0];
+        rhos[1] = params.vecd.at("rhos")[1];
+        fs[0] = params.vecd.at("fs")[0];
+        fs[1] = params.vecd.at("fs")[1];
+        chis[0] = params.vecd.at("chis")[0];
+        chis[1] = params.vecd.at("chis")[1];
         M = params.d.at("M");
     }
     catch (std::exception){
         throw std::runtime_error("Lotka Volterra parameters not found");
     }
+    //state_sample_dist = std::discrete_distribution<int> (weights+0, weights+4);
+};
 
-    vecRates birth_rates = vecRates(0);
-    vecRates death_rates = vecRates(0);
 
-    for (int s=0; s<rhos.size(); s++){
-        d_vecd_f birth_rate = d_vecd_f{  [fs, rhos, s](vecd state) {  return fs[s] * rhos[s]; } };
-        d_vecd_f death_rate = d_vecd_f{  [fs, rhos, chis, s, M](vecd state) {  
-            double death_coef = 0;
-            for (int i=0; i<rhos.size(); i++) death_coef += state[i] * chis[i] * fs[i];
-            return rhos[s] * death_coef / M; 
-        } };
-        birth_rates.push_back(birth_rate);
-        death_rates.push_back(death_rate);
+void GillespieLV2::update_weights(vecd& weights, double& w_tot) {
+    weights[0] = (fs[0] * rhos[0])*state[0];
+    weights[1] = (fs[1] * rhos[1])*state[1];
+    double death_coef = 0;
+    for (int i=0; i<2; i++) death_coef += state[i] * chis[i] * fs[i];
+    weights[2] = (rhos[0] * death_coef / M)*state[0];
+    weights[3] = (rhos[1] * death_coef / M)*state[1];
+    for (int i=0; i<4; i++) w_tot += weights[i];
+}
+
+
+GillespiePlot2::GillespiePlot2(param& params, std::mt19937& generator):
+GillespieBD{generator} {
+
+    try{
+        betas[0] = params.vecd.at("betas")[0];
+        betas[1] = params.vecd.at("betas")[1];
+        alpha = params.d.at("alpha");
+        M = params.d.at("M");
     }
+    catch (std::exception){
+        throw std::runtime_error("Plotkin parameters not found");
+    }
+    //state_sample_dist = std::discrete_distribution<int> (weights+0, weights+4);
+};
 
-    return new GillespieBD(birth_rates, death_rates, generator);
+
+void GillespiePlot2::update_weights(vecd& weights, double& w_tot) {
+    weights[0] = betas[0]*state[0];
+    weights[1] = betas[1]*state[1];
+    double N = 0;
+    for (int i=0; i<2; i++) N += state[i];
+    weights[2] = betas[0] * alpha * ( 1 + N / M )*state[0];
+    weights[3] = betas[1] * alpha * ( 1 + N / M )*state[1];
+    for (int i=0; i<4; i++) w_tot += weights[i];
 }
 
 
 endc_f endc_time(int fin_step){
     endc_f endc = endc_f{
         [fin_step](int t, vecd s) {
+            if (t>fin_step) return true;
+            return false;
+        }
+    };
+    return endc;
+}
+
+endc_a_f endc_a_time(int fin_step){
+    endc_a_f endc = endc_a_f{
+        [fin_step](const int& t, const int s[], const int& l) {
             if (t>fin_step) return true;
             return false;
         }
@@ -154,11 +159,36 @@ endc_f endc_time_fixation(int fin_step){
     return endc;
 }
 
+endc_a_f endc_a_time_fixation(int fin_step){
+    endc_a_f endc = endc_a_f{
+        [fin_step](const int& t, const int states[], const int& l) {
+            if (t>fin_step) return true;
+            for (int i=0; i<l; i++)
+                if (states[i] == 0) return true;
+            return false;
+        }
+    };
+    return endc;
+}
+
 
 endc_f endc_passage(vecd up_bounds, vecd low_bounds) {
     endc_f endc = endc_f{
         [up_bounds, low_bounds](int t, vecd states) {
             for (int s=0; s<states.size(); s++) {
+                if (states[s] >= up_bounds[s]) return true;
+                if (states[s] <= low_bounds[s]) return true;
+            }
+            return false;
+        }
+    };
+    return endc;
+}
+
+endc_a_f endc_a_passage(vecd up_bounds, vecd low_bounds) {
+    endc_a_f endc = endc_a_f{
+        [up_bounds, low_bounds](const int& t, const int states[], const int& l) {
+            for (int s=0; s<l; s++) {
                 if (states[s] >= up_bounds[s]) return true;
                 if (states[s] <= low_bounds[s]) return true;
             }
