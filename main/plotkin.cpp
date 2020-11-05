@@ -18,15 +18,31 @@ int main(int argc, char** argv) {
     StocProc* alg = new GillespiePlot2(params, generator);
     SPEnsemble Ensemble = SPEnsemble(alg);
 
-    // Observables to compute ober trajectory
+     // Observables to compute ober trajectory
     vec_d_vecd_f obs = vec_d_vecd_f {
-        // Fraction of the first speciec
+        // n
+        d_vecd_f{ [](const vecd& states) { return states[0]; } },
+        // n*n
+        d_vecd_f{ [](const vecd& states) { return states[0]*states[0]; } },
+        // N
+        d_vecd_f{ [](const vecd& states) { return states[0] + states[1]; } },
+        // N*N
+        d_vecd_f{ [](const vecd& states) { return (states[0] + states[1])*(states[0] + states[1]); } },
+        // N*n
+        d_vecd_f{ [](const vecd& states) { return states[0]*(states[0] + states[1]); } },
+        // x
         d_vecd_f{ [](const vecd& states) { return states[0] / (states[0] + states[1]); } },
-        // Number of individuals
-        d_vecd_f{ [](const vecd& states) { return states[0] + states[1]; } }
-    };
+        // x*x
+        d_vecd_f{ [](const vecd& states) { return states[0]*states[0] / (states[0] + states[1]) / (states[0] + states[1]); } },
+        // x / N
+        d_vecd_f{ [](const vecd& states) { return states[0] / (states[0] + states[1]) / (states[0] + states[1]); } },
+        // x*x / N
+        d_vecd_f{ [](const vecd& states) { return states[0]*states[0] / (states[0] + states[1]) / (states[0] + states[1]) / (states[0] + states[1]); } },
+    }; 
 
-    Ensemble.print_moments(obs, params, vecd{1.0, 2.0}, (int)params.d.at("N_real"), data_dir + path + "\\");
+    Ensemble.print_averages(obs, params, (int)params.d.at("N_real_moments"), data_dir + path + "/obs.txt");
+    
+    Ensemble.print_final_states(params, (int)params.d.at("N_real_final"), data_dir + path + "/final_state.txt"); 
 
     delete[] alg;
 

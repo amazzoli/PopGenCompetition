@@ -1,0 +1,6 @@
+betas	1,1.5,
+end_cond	time
+max_steps	100
+traj_step	1
+init_state	0,
+N_real_moments	1

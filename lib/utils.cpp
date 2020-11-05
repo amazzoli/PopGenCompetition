@@ -1,9 +1,9 @@
 #include "utils.h"
 
 
-vecd str2vecd(std::string line, std::string separator, bool sep_at_end) {
+vecd str2vecd(str line, str separator, bool sep_at_end) {
     std::size_t sep_pos = line.find(separator);
-    if (sep_pos == std::string::npos) {
+    if (sep_pos == str::npos) {
         if (sep_at_end)
             throw std::runtime_error(separator + " separator not found in " + line);
         else {
@@ -12,7 +12,7 @@ vecd str2vecd(std::string line, std::string separator, bool sep_at_end) {
         }
     }
 
-    std::string elem = line.substr(0, sep_pos);
+    str elem = line.substr(0, sep_pos);
     vecd v = vecd(0);
     try {
         v.push_back(std::stod(elem));
@@ -23,15 +23,15 @@ vecd str2vecd(std::string line, std::string separator, bool sep_at_end) {
 
     while (true){
         std::size_t next_sep_pos = line.find(separator, sep_pos+1);
-        if (sep_at_end && next_sep_pos == std::string::npos) break;
-        std::string elem = line.substr(sep_pos+1, next_sep_pos-sep_pos);
+        if (sep_at_end && next_sep_pos == str::npos) break;
+        str elem = line.substr(sep_pos+1, next_sep_pos-sep_pos);
         try{
             v.push_back(std::stod(elem));
         }
         catch (std::exception& e){
             v.push_back(0);
         }
-        if (!sep_at_end && next_sep_pos == std::string::npos) break;
+        if (!sep_at_end && next_sep_pos == str::npos) break;
         sep_pos = next_sep_pos;
     }
 
@@ -39,7 +39,7 @@ vecd str2vecd(std::string line, std::string separator, bool sep_at_end) {
 }
 
 
-param parse_param_file(std::string file_path){
+param parse_param_file(str file_path){
 
     dictd paramd;
     dictvecd paramvecd;
@@ -49,14 +49,14 @@ param parse_param_file(std::string file_path){
     if (!param_file.is_open())
         throw std::runtime_error("Error in opening the parameter file at "+file_path);
 
-    std::string line;
+    str line;
     while ( getline (param_file, line) ) {
         std::size_t tab_pos = line.find("\t");
-        std::string key = line.substr(0,tab_pos);
-        std::string value = line.substr(tab_pos+1, std::string::npos);
+        str key = line.substr(0,tab_pos);
+        str value = line.substr(tab_pos+1, str::npos);
 
         std::size_t comma_pos = value.find(",");
-        if (value.find(",") != std::string::npos){
+        if (value.find(",") != str::npos){
             paramvecd[key] = str2vecd(value, ",", true); // Parse a vector
         }
         else{
@@ -77,7 +77,7 @@ param parse_param_file(std::string file_path){
 }
 
 
-void print_2d_traj(vec2d traj, vecs labels, std::string file_path) {
+void print_2d_traj(vec2d traj, vecs labels, str file_path) {
 
     std::ofstream out;
     out.open(file_path);
@@ -92,5 +92,15 @@ void print_2d_traj(vec2d traj, vecs labels, std::string file_path) {
         out << "\n";
     }
 
+    out.close();
+}
+
+
+void print_traj(vecd traj, str file_path) {
+    std::ofstream out;
+    out.open(file_path);
+    for (int t=0; t<traj.size(); t++){
+        out << traj[t] << "\n";
+    }
     out.close();
 }

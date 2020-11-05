@@ -2,14 +2,19 @@
 
 
 vec2d generate_init_cond(SPEnsemble* ensemble, param& params, int relax_step, int N_init_cond) {
+
     params.s["end_cond"] = "time";
-    params.d["traj_step"] = 1.0;
+    params.d["traj_step"] = relax_step-1;
     params.d["max_steps"] = relax_step;
-    params.vecd["init_state"] = vecd { 0.0, params.d["M"] / params.vecd["chis"][1] };
-    std::tuple<vecd, vec2d> init_cond_t = (*ensemble).get_final_states(params, N_init_cond);
+
+    // Initial conditions at carrying capacity of the second species
+    params.vecd["init_state"] = vecd { 0.0, params.d.at("carrying_cap") };
+    std::tuple<vecd, vec2d> init_cond_t = (*ensemble).get_final_states(params);
+
     vec2d init_cond = vec2d(N_init_cond, vecd(0));
-    for (int r=0; r<N_init_cond; r++) 
+    for (int r=0; r<N_init_cond; r++) {
         init_cond[r] = vecd{ 1.0, std::get<1>(init_cond_t)[r][1] };
+    }
     return init_cond;
 }
 
@@ -21,7 +26,8 @@ InvProbInfo build_inv_prob_info(SPEnsemble* ensemble, param& params, vec2d& init
     params.s["end_cond"] = "passage"; // Changing end condition to first passage
     params.vecd["low_bound"] = vecd { 0, 0 }; // Lower boundary for the end condition
     params.vecd["up_bound"] = vecd { 1000000, 1000000 }; // Upper boundary for the end condition, changed during loop
-
+    params.d["traj_step"] = 1;
+    
     for (int k=0; k<thresholds.size(); k++) {
 
         std::cout << "Cycle " << k << " starts, threshold: " << thresholds[k] <<"\n";

@@ -13,20 +13,20 @@
 #include <string>
 
 
+using str = std::string;
 using veci = std::vector<int>;
 using vec2i = std::vector<veci>;
 using vecd = std::vector<double>;
 using vec2d = std::vector<vecd>;
 using vec3d = std::vector<vec2d>;
-using vecs = std::vector<std::string>;
+using vecs = std::vector<str>;
 using d_vecd_f = std::function<double(const vecd&)>;
-using vec_d_vecd_f = std::vector<d_vecd_f>;
 using endc_f = std::function<bool(const double&, const vecd&)>;
 using endc_a_f = std::function<bool(const double&, const int*, const int&)>;
 using vecRates = std::vector<d_vecd_f>;
-using dictd = std::map<std::string, double>;
-using dictvecd = std::map<std::string, vecd>;
-using dicts = std::map<std::string, std::string>;
+using dictd = std::map<str, double>;
+using dictvecd = std::map<str, vecd>;
+using dicts = std::map<str, str>;
 
 
 /* Parameters. They can be doubles, vector of doubles or strings */
@@ -39,9 +39,11 @@ struct param {
 
 // IN-OUT
 
-param parse_param_file(std::string file_path);
+param parse_param_file(str file_path);
 
-void print_2d_traj(vec2d traj, vecs labels, std::string file_path);
+void print_traj(vecd traj, str file_path);
+
+void print_2d_traj(vec2d traj, vecs labels, str file_path);
 
 
 /* Class for measuring the time between the reset and en enlapsed call */

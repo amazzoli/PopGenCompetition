@@ -11,7 +11,7 @@ class StocProc {
     protected:
         /* Random number generator */
         std::mt19937 generator;
-        /* Trajectory of states generated through run method. First dim: time, second: state space */
+        /* Trajectory of states generated through run method. First dim: time step, second: state space */
         vec2d state_traj;
         /* Trajectory of times of each state generated through run method */
         vecd time_traj;
@@ -45,7 +45,7 @@ class GillespieBD : public StocProc {
         /* Current time */
         double time;
         /* Size of the state space */
-        virtual void update_weights(vecd& weights, double& w_tot) = 0;
+        virtual void update_weights(vecd& weights) = 0;
         
     public:
         GillespieBD(std::mt19937& generator);
@@ -54,7 +54,7 @@ class GillespieBD : public StocProc {
         /* Override. Run having all the paramenters sepficied in the structure */
         void run(param& params);
         /* Print the stored state trajectory */
-        void print_traj(std::string out_path) const;
+        void print_traj(str out_path) const;
         /* Override. Get the size of the state space */
         virtual const int state_dim() const = 0;
 };
@@ -74,10 +74,10 @@ class GillespieLV2 : public GillespieBD {
         int M;
 
     protected:
-        void update_weights(vecd& weights, double& w_tot);
+        void update_weights(vecd& weights);
 
     public:
-        GillespieLV2(param& params, std::mt19937& generator);
+        GillespieLV2(const param& params, std::mt19937& generator);
         const int state_dim() const { return 2; }
 };
 
@@ -94,10 +94,10 @@ class GillespiePlot2 : public GillespieBD {
         int M;
 
     protected:
-        void update_weights(vecd& weights, double& w_tot);
+        void update_weights(vecd& weights);
 
     public:
-        GillespiePlot2(param& params, std::mt19937& generator);
+        GillespiePlot2(const param& params, std::mt19937& generator);
         const int state_dim() const { return 2; }
 };
 
@@ -113,6 +113,11 @@ endc_a_f endc_a_time_fixation(int fin_step);
 /* Terminal condition that stops when a state hits its a bound */
 endc_f endc_passage(vecd up_bounds, vecd low_bounds);
 endc_a_f endc_a_passage(vecd up_bounds, vecd low_bounds);
+
+
+
+GillespieBD* get_gillespieBD(const param& params, std::mt19937& generator);
+
 
 
 #endif

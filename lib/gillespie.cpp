@@ -45,8 +45,12 @@ void GillespieBD::run(vecd& init_state, endc_f& end_condition, int traj_step) {
     
     while (!end_condition(step, state)) {
 
-        update_weights(weights, w_tot);
-        std::exponential_distribution<double> exp_dist(1/w_tot);
+        update_weights(weights);
+        w_tot = 0;
+        for (int i=0; i<weights.size(); i++) w_tot += weights[i];
+        if (w_tot == 0)
+            throw std::runtime_error("0 total weight, all states are zero");
+        std::exponential_distribution<double> exp_dist(w_tot);
         double dt = exp_dist(generator);
         time += dt;
 
@@ -57,21 +61,20 @@ void GillespieBD::run(vecd& init_state, endc_f& end_condition, int traj_step) {
             state[state_sample]++;
         // Death event
         else 
-            state[state_sample - state_dim()] = std::max(0.0, state[state_sample - state_dim()]-1);
-        
+            //state[state_sample - state_dim()] = std::max(0.0, state[state_sample - state_dim()]-1);
+            state[state_sample - state_dim()]--;
+
         if (step % traj_step == 0){
             state_traj.push_back(state);
             time_traj.push_back(time);
         }
-
         step++;
     }
 }
 
 
-GillespieLV2::GillespieLV2(param& params, std::mt19937& generator):
+GillespieLV2::GillespieLV2(const param& params, std::mt19937& generator):
 GillespieBD{generator} {
-
     try{
         rhos[0] = params.vecd.at("rhos")[0];
         rhos[1] = params.vecd.at("rhos")[1];
@@ -84,22 +87,20 @@ GillespieBD{generator} {
     catch (std::exception){
         throw std::runtime_error("Lotka Volterra parameters not found");
     }
-    //state_sample_dist = std::discrete_distribution<int> (weights+0, weights+4);
 };
 
 
-void GillespieLV2::update_weights(vecd& weights, double& w_tot) {
+void GillespieLV2::update_weights(vecd& weights) {
     weights[0] = (fs[0] * rhos[0])*state[0];
     weights[1] = (fs[1] * rhos[1])*state[1];
     double death_coef = 0;
     for (int i=0; i<2; i++) death_coef += state[i] * chis[i] * fs[i];
     weights[2] = (rhos[0] * death_coef / M)*state[0];
     weights[3] = (rhos[1] * death_coef / M)*state[1];
-    for (int i=0; i<4; i++) w_tot += weights[i];
 }
 
 
-GillespiePlot2::GillespiePlot2(param& params, std::mt19937& generator):
+GillespiePlot2::GillespiePlot2(const param& params, std::mt19937& generator):
 GillespieBD{generator} {
 
     try{
@@ -111,18 +112,16 @@ GillespieBD{generator} {
     catch (std::exception){
         throw std::runtime_error("Plotkin parameters not found");
     }
-    //state_sample_dist = std::discrete_distribution<int> (weights+0, weights+4);
 };
 
 
-void GillespiePlot2::update_weights(vecd& weights, double& w_tot) {
+void GillespiePlot2::update_weights(vecd& weights) {
     weights[0] = betas[0]*state[0];
     weights[1] = betas[1]*state[1];
     double N = 0;
     for (int i=0; i<2; i++) N += state[i];
     weights[2] = betas[0] * alpha * ( 1 + N / M )*state[0];
     weights[3] = betas[1] * alpha * ( 1 + N / M )*state[1];
-    for (int i=0; i<4; i++) w_tot += weights[i];
 }
 
 
@@ -196,4 +195,20 @@ endc_a_f endc_a_passage(vecd up_bounds, vecd low_bounds) {
         }
     };
     return endc;
+}
+
+
+GillespieBD* get_gillespieBD(const param& params, std::mt19937& generator) {
+
+    str alg_name;
+    try{ alg_name = params.s.at("process_type"); }
+    catch (std::exception){ throw std::runtime_error("Stochastic process type not found"); }
+
+    if (alg_name == "lv2"){
+        return new GillespieLV2(params, generator);
+    }
+    else if (alg_name == "plotkin2"){
+		return new GillespiePlot2(params, generator);
+    }
+    else throw std::invalid_argument( "Invalid stochastic process name" );
 }
