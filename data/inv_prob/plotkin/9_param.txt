@@ -1,5 +1,5 @@
 process_type	plotkin2
-N_init_cond	200
+N_init_cond	1000
 relax_step	1500
 thresholds	2,5,10,20,50,100,200,300,400,500,1000,10000,
 M	400
