@@ -33,7 +33,7 @@ class SPEnsemble {
            element and the averages trajectories as the second one. The stoch proc must generate 
            trajectories of the same lenght, otherwise an error is thown. */
         std::tuple<vec2d, vec2d> get_averages(param& params);
-        void print_averages(param& params, int N_realizations, str path);
+        void print_averages(param& params, str path);
 
         /* Get the averages for some fuctions of the states. The parameters should be able to initialize the run 
            method of the StocProc. It returns the time average and time std trajectory as first tuple

@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     param params = parse_param_file(data_dir + path + "/param.txt"); // Def in utils
 
     StocProc* alg = new GillespiePlot2(params, generator);
-    SPEnsemble Ensemble = SPEnsemble(alg);
+    SPEnsemble ensemble = SPEnsemble(alg, params.d.at("N_init_cond"));
 
      // Observables to compute ober trajectory
     vec_d_vecd_f obs = vec_d_vecd_f {
@@ -40,11 +40,11 @@ int main(int argc, char** argv) {
         d_vecd_f{ [](const vecd& states) { return states[0]*states[0] / (states[0] + states[1]) / (states[0] + states[1]) / (states[0] + states[1]); } },
     }; 
 
-    Ensemble.print_averages(obs, params, (int)params.d.at("N_real_moments"), data_dir + path + "/obs.txt");
+    ensemble.print_averages(obs, params, data_dir + path + "/obs.txt");
     
-    Ensemble.print_final_states(params, (int)params.d.at("N_real_final"), data_dir + path + "/final_state.txt"); 
+    ensemble.print_final_states(params, data_dir + path + "/final_state.txt"); 
 
-    delete[] alg;
+    delete alg;
 
     return 0;
 }

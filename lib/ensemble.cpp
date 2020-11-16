@@ -78,7 +78,7 @@ void SPEnsemble::print_averages(vec_d_vecd_f& functions, param& params, str path
 }
 
 
-void SPEnsemble::print_averages(param& params, int N_realizations, str path) {
+void SPEnsemble::print_averages(param& params, str path) {
     std::tuple<vec2d, vec2d> output = get_averages(params);
     print_average_output(output, path);
 } 
@@ -146,6 +146,5 @@ void SPEnsemble::print_average_output(std::tuple<vec2d, vec2d> output, str path)
             to_print.push_back(line);
         }
 
-        std::cout << path << "\n";
         print_2d_traj(to_print, labels, path);
 }

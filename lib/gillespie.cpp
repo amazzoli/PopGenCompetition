@@ -212,3 +212,20 @@ GillespieBD* get_gillespieBD(const param& params, std::mt19937& generator) {
     }
     else throw std::invalid_argument( "Invalid stochastic process name" );
 }
+
+
+void GillespieBD::print_traj(str path) const {
+    vec2d traj = vec2d(0);
+    for (int i=0; i<time_traj.size(); i++) {
+        vecd aux_traj = vecd(0);
+        aux_traj.push_back(time_traj[i]);
+        for (int s=0; s<state_traj[i].size(); s++)
+            aux_traj.push_back(state_traj[i][s]);
+        traj.push_back(aux_traj);
+    }
+    vecs labels = vecs{"Time"};
+    for (int s=0; s<state_traj[0].size(); s++)
+        labels.push_back("s"+std::to_string(s));
+
+    print_2d_traj(traj, labels, path);
+}
