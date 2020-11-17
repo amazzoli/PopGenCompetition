@@ -36,7 +36,6 @@ class GillespieBD : public StocProc {
 
     private:
 
-        vecd weights;
         double w_tot;
 
     protected:
@@ -45,7 +44,11 @@ class GillespieBD : public StocProc {
         /* Current time */
         double time;
         /* Size of the state space */
-        virtual void update_weights(vecd& weights) = 0;
+        //const static int state_d = 2;
+        //double weights[2*state_d];
+        vecd weights;
+        //virtual void update_weights(double (&weights)[2*state_d]) = 0;
+        virtual void update_weights(vecd weights) = 0;
         
     public:
         GillespieBD(std::mt19937& generator);
@@ -74,7 +77,8 @@ class GillespieLV2 : public GillespieBD {
         int M;
 
     protected:
-        void update_weights(vecd& weights);
+    
+        void update_weights(vecd weights);
 
     public:
         GillespieLV2(const param& params, std::mt19937& generator);
@@ -94,7 +98,7 @@ class GillespiePlot2 : public GillespieBD {
         int M;
 
     protected:
-        void update_weights(vecd& weights);
+        void update_weights(vecd weights);
 
     public:
         GillespiePlot2(const param& params, std::mt19937& generator);

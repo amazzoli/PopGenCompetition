@@ -37,8 +37,8 @@ void GillespieBD::run(vecd& init_state, endc_f& end_condition, int traj_step) {
 
     int step = 0;
     time = 0;
-    state_traj = vec2d(0);
-    time_traj = vecd(0);
+    state_traj = vec2d {init_state};
+    time_traj = vecd {0};
     if (state.size() != init_state.size())
         throw std::runtime_error("Wrong size of the initial state");
     state = init_state;
@@ -46,8 +46,8 @@ void GillespieBD::run(vecd& init_state, endc_f& end_condition, int traj_step) {
     while (!end_condition(step, state)) {
 
         update_weights(weights);
-        w_tot = 0;
-        for (int i=0; i<weights.size(); i++) w_tot += weights[i];
+        w_tot = 1;
+        for (const double& w : weights) w_tot += w;
         if (w_tot == 0)
             throw std::runtime_error("0 total weight, all states are zero");
         std::exponential_distribution<double> exp_dist(w_tot);
@@ -56,6 +56,7 @@ void GillespieBD::run(vecd& init_state, endc_f& end_condition, int traj_step) {
 
         std::discrete_distribution<int> state_sample_dist (weights.begin(), weights.end());
         int state_sample = state_sample_dist(generator);
+
         // Birth event
         if (state_sample < state_dim()) 
             state[state_sample]++;
@@ -64,12 +65,15 @@ void GillespieBD::run(vecd& init_state, endc_f& end_condition, int traj_step) {
             //state[state_sample - state_dim()] = std::max(0.0, state[state_sample - state_dim()]-1);
             state[state_sample - state_dim()]--;
 
-        if (step % traj_step == 0){
+        if (traj_step > 0 && step % traj_step == 0){
             state_traj.push_back(state);
             time_traj.push_back(time);
         }
         step++;
     }
+
+    state_traj.push_back(state);
+    time_traj.push_back(time);
 }
 
 
@@ -90,7 +94,7 @@ GillespieBD{generator} {
 };
 
 
-void GillespieLV2::update_weights(vecd& weights) {
+void GillespieLV2::update_weights(vecd weights) {
     weights[0] = (fs[0] * rhos[0])*state[0];
     weights[1] = (fs[1] * rhos[1])*state[1];
     double death_coef = 0;
@@ -115,7 +119,7 @@ GillespieBD{generator} {
 };
 
 
-void GillespiePlot2::update_weights(vecd& weights) {
+void GillespiePlot2::update_weights(vecd weights) {
     weights[0] = betas[0]*state[0];
     weights[1] = betas[1]*state[1];
     double N = 0;

@@ -1,10 +1,10 @@
 process_type	lv2
-N_init_cond	1500
-relax_step	2000
+N_init_cond	2000
+relax_step	3000
 thresholds	2,5,10,20,50,100,200,300,400,500,1000,10000,
 M	500
-N_processes	25
-rhos	1,5,
-chis	1,4,
+N_processes	21
+rhos	1,2.924017738212865,
+chis	1,2.0,
 fs	1,0.998,
-carrying_cap	125.0
+carrying_cap	250.0

@@ -26,18 +26,16 @@ InvProbInfo build_inv_prob_info(SPEnsemble* ensemble, param& params, vec2d& init
     params.s["end_cond"] = "passage"; // Changing end condition to first passage
     params.vecd["low_bound"] = vecd { 0, 0 }; // Lower boundary for the end condition
     params.vecd["up_bound"] = vecd { 1000000, 1000000 }; // Upper boundary for the end condition, changed during loop
-    params.d["traj_step"] = 1;
+    params.d["traj_step"] = 0;
     
     for (int k=0; k<thresholds.size(); k++) {
-
-        std::cout << "Cycle " << k << " starts, threshold: " << thresholds[k] <<"\n";
 
         // Change the end condition of the process
         params.vecd["up_bound"] = vecd { thresholds[k] , 1000000 };
 
         // Run the processes until first passage at one of the boundaries
         std::tuple<vecd, vec2d> out = (*ensemble).get_final_states(params, init_cond);
-
+        
         // Update all the observables
         vec2d aux_init_cond = vec2d(0);
         vecd time0p = vecd(0), timemi = vecd(0), time0i = vecd(0);
@@ -62,7 +60,7 @@ InvProbInfo build_inv_prob_info(SPEnsemble* ensemble, param& params, vec2d& init
         info.timem_inv.push_back(timemi);
         info.time0_inv.push_back(time0i);
 
-        std::cout << "Resident_ext: " << time0p.size() << ", invaders_at_threshold: " << timemi.size() << ", invaders_ext: " << time0i.size() << "\n";
+        std::cout << "Cycle " << k << " starts, threshold: " << thresholds[k] << ", resident_ext: " << time0p.size() << "\n";
 
         if (timemi.size() == 0) break;
 

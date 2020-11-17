@@ -19,6 +19,7 @@ int main(int argc, char** argv) {
 
     GillespieBD* alg;
     SPEnsemble* ensemble;
+    Timer time;
     for (int pr=1; pr<=n_processes; pr++) {
         
         // Parameters
@@ -43,7 +44,8 @@ int main(int argc, char** argv) {
         compute_inv_prob_and_print(ensemble, params, full_dir+ std::to_string(pr) + "sw_inv_p.txt", generator);
         std::cout << std::to_string(pr) << "/" << std::to_string(n_processes) << " switched completed\n"; 
     }
-
+    std::cout << "Time: " << time.elapsed() << "\n";
+    
     delete alg;
     delete ensemble;
 
