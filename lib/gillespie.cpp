@@ -46,7 +46,9 @@ void GillespieBD::run(vecd& init_state, endc_f& end_condition, int traj_step) {
     while (!end_condition(step, state)) {
 
         update_weights(weights);
-        w_tot = 1;
+        w_tot = 0;
+        //for (const double& w : weights) std::cout << w << ",";
+        //std::cout << "\n";
         for (const double& w : weights) w_tot += w;
         if (w_tot == 0)
             throw std::runtime_error("0 total weight, all states are zero");
@@ -94,7 +96,7 @@ GillespieBD{generator} {
 };
 
 
-void GillespieLV2::update_weights(vecd weights) {
+void GillespieLV2::update_weights(vecd& weights) {
     weights[0] = (fs[0] * rhos[0])*state[0];
     weights[1] = (fs[1] * rhos[1])*state[1];
     double death_coef = 0;
@@ -119,7 +121,7 @@ GillespieBD{generator} {
 };
 
 
-void GillespiePlot2::update_weights(vecd weights) {
+void GillespiePlot2::update_weights(vecd& weights) {
     weights[0] = betas[0]*state[0];
     weights[1] = betas[1]*state[1];
     double N = 0;
