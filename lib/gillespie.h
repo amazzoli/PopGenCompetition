@@ -106,6 +106,28 @@ class GillespiePlot2 : public GillespieBD {
 };
 
 
+/* One resource chemostat */
+class GillespieChem2 : public GillespieBD {
+
+    private:
+        /* Death rate */
+        double delta[2];
+        /* Pop fitness */
+        double alpha[2];
+        /* Digestion efficiency */
+        double eta[2];
+        /* Pop size */
+        int M;
+
+    protected:
+        void update_weights(vecd& weights);
+
+    public:
+        GillespieChem2(const param& params, std::mt19937& generator);
+        const int state_dim() const { return 2; }
+};
+
+
 /* Terminal condition after fin_time steps */
 endc_f endc_time(int fin_step);
 endc_a_f endc_a_time(int fin_step);

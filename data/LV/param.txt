@@ -1,3 +1,4 @@
+process_type	lv2
 rhos	2,1,
 chis	1,1,
 fs	1.01,1,

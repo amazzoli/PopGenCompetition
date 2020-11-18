@@ -1,0 +1,10 @@
+process_type	chem2
+N_init_cond	2000
+relax_step	3000
+thresholds	2,5,10,20,50,100,200,300,400,500,1000,2000,5000,10000,
+M	500
+N_processes	21
+deltas	1,1.7099759466766968,
+etas	1.0,0.8549879733383484,
+alphas	1,2.004,
+carrying_cap	250.0

@@ -131,6 +131,33 @@ void GillespiePlot2::update_weights(vecd& weights) {
 }
 
 
+
+GillespieChem2::GillespieChem2(const param& params, std::mt19937& generator):
+GillespieBD{generator} {
+    try{
+        delta[0] = params.vecd.at("deltas")[0];
+        delta[1] = params.vecd.at("deltas")[1];
+        alpha[0] = params.vecd.at("alphas")[0];
+        alpha[1] = params.vecd.at("alphas")[1];
+        eta[0] = params.vecd.at("etas")[0];
+        eta[1] = params.vecd.at("etas")[1];
+        M = params.d.at("M");
+    }
+    catch (std::exception){
+        throw std::runtime_error("Chemostat parameters not found");
+    }
+};
+
+
+void GillespieChem2::update_weights(vecd& weights) {
+    double R = M/(state[0]*alpha[0] + state[1]*alpha[1]);
+    weights[0] = eta[0]*alpha[0]*R*state[0];
+    weights[1] = eta[1]*alpha[1]*R*state[1];
+    weights[2] = delta[0]*state[0];
+    weights[3] = delta[1]*state[1];
+}
+
+
 endc_f endc_time(int fin_step){
     endc_f endc = endc_f{
         [fin_step](int t, vecd s) {
@@ -215,6 +242,9 @@ GillespieBD* get_gillespieBD(const param& params, std::mt19937& generator) {
     }
     else if (alg_name == "plotkin2"){
 		return new GillespiePlot2(params, generator);
+    }
+    else if (alg_name == "chem2"){
+		return new GillespieChem2(params, generator);
     }
     else throw std::invalid_argument( "Invalid stochastic process name" );
 }
