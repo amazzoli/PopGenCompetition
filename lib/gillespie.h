@@ -128,6 +128,60 @@ class GillespieChem2 : public GillespieBD {
 };
 
 
+/* One resource chemostat. Constant death rate and evolving growth rate. Eta depends on growth rate.
+The growth rate of type i is given by delta_alpha*(i+1). Digestion efficiency 1/(alpha_i + alpha0)*/
+class GillespieChemEvolDelta0 : public GillespieBD {
+
+    private:
+        /* Death rate */
+        double delta0;
+        /* Maximum growht rate */
+        double alpha_max;
+        /* Mutation rate */
+        double mut_rate;
+        /* Growth rate constant \ll 1 */
+        double alpha0;
+        /* Pop size */
+        int M;
+        /* Step in the growth rate given by mutation */
+        double delta_alpha;
+
+    protected:
+        void update_weights(vecd& weights);
+
+    public:
+        GillespieChemEvolDelta0(const param& params, std::mt19937& generator);
+        const int state_dim() const { return round(alpha_max / delta_alpha); }
+};
+
+
+/* One resource chemostat. Constant intake rate and evolving growth rate. Delta depends on growth rate.
+The growth rate of type i is given by delta_alpha*(i+1). Digestion efficiency 1/(alpha_i + alpha0)*/
+class GillespieChemEvolEta0 : public GillespieBD {
+
+    private:
+        /* Death rate */
+        double eta0;
+        /* Maximum growht rate */
+        double alpha_max;
+        /* Mutation rate */
+        double mut_rate;
+        /* Growth rate constant \ll 1 */
+        double alpha0;
+        /* Pop size */
+        int M;
+        /* Step in the growth rate given by mutation */
+        double delta_alpha;
+
+    protected:
+        void update_weights(vecd& weights);
+
+    public:
+        GillespieChemEvolEta0(const param& params, std::mt19937& generator);
+        const int state_dim() const { return round(alpha_max / delta_alpha); }
+};
+
+
 /* Terminal condition after fin_time steps */
 endc_f endc_time(int fin_step);
 endc_a_f endc_a_time(int fin_step);
