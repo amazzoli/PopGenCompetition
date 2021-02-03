@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     GillespieBD* alg;
     SPEnsemble* ensemble;
     Timer time;
-    for (int pr=1; pr<=n_processes; pr++) {
+    for (int pr=7; pr<=n_processes; pr++) {
         
         // Parameters
         param params = parse_param_file(full_dir + std::to_string(pr) + "_param.txt");
