@@ -78,14 +78,13 @@ param parse_param_file(str file_path){
 
 
 void print_2d_traj(vec2d traj, vecs labels, str file_path) {
-
     std::ofstream out;
     out.open(file_path);
 
     for (int k=0; k<labels.size(); k++)
         out << labels[k] << "\t";
     out << "\n";
-    
+
     for (int t=0; t<traj.size(); t++){
         for (int k=0; k<labels.size(); k++)
             out << traj[t][k] << "\t";

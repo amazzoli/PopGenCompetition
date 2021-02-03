@@ -158,6 +158,98 @@ void GillespieChem2::update_weights(vecd& weights) {
 }
 
 
+GillespieChemEvolDelta0::GillespieChemEvolDelta0(const param& params, std::mt19937& generator):
+GillespieBD{generator} {
+    try{
+        delta0 = params.d.at("delta0");
+        alpha_max = params.d.at("alpha_max");
+        mut_rate = params.d.at("mut_rate");
+        alpha0 = params.d.at("alpha0");
+        delta_alpha = params.d.at("delta_alpha");
+        M = params.d.at("M");
+    }
+    catch (std::exception){
+        throw std::runtime_error("Chemostat parameters not found");
+    }
+};
+
+
+void GillespieChemEvolDelta0::update_weights(vecd& weights) {
+
+    double R = 0;
+    for (int i=0; i<state.size(); i++) R += state[i] * (i+1)*delta_alpha;
+    R = M / R;
+
+    // First type (with boundary condition)
+    double eta1 = 1 / (delta_alpha + alpha0);
+    double eta2 = 1 / (2*delta_alpha + alpha0);
+    weights[0] = R * ((1-mut_rate)*eta1*delta_alpha*state[0] + mut_rate*eta2*2*delta_alpha*state[1]);
+    weights[state_dim()] = delta0*state[0];
+
+    // Intermediate types
+    for (int i=1; i<state.size()-1; i++) {
+        weights[i] = mut_rate*eta1*i*delta_alpha*state[i-1]; 
+        weights[i] += (1-2*mut_rate)*eta2*(i+1)*delta_alpha*state[i]; 
+        eta1 = eta2;
+        eta2 = 1 / ((i+2)*delta_alpha + alpha0);
+        weights[i] += mut_rate*eta2*(i+2)*delta_alpha*state[i+1]; 
+        weights[i] *= R;
+
+        weights[state_dim()+i] = delta0*state[i];
+    }
+
+    // Last type
+    weights[state_dim()-1] = mut_rate*eta1*(state_dim()-1)*delta_alpha*state[state_dim()-2];
+    weights[state_dim()-1] += (1-mut_rate)*eta2*(state_dim())*delta_alpha*state[state_dim()-1];
+    weights[state_dim()-1] *= R;
+    weights[2*state_dim()-1] = delta0*state[state_dim()-1];
+}
+
+
+GillespieChemEvolEta0::GillespieChemEvolEta0(const param& params, std::mt19937& generator):
+GillespieBD{generator} {
+    try{
+        eta0 = params.d.at("eta0");
+        alpha_max = params.d.at("alpha_max");
+        mut_rate = params.d.at("mut_rate");
+        alpha0 = params.d.at("alpha0");
+        delta_alpha = params.d.at("delta_alpha");
+        M = params.d.at("M");
+    }
+    catch (std::exception){
+        throw std::runtime_error("Chemostat parameters not found");
+    }
+};
+
+
+void GillespieChemEvolEta0::update_weights(vecd& weights) {
+
+    double R = 0;
+    for (int i=0; i<state.size(); i++) R += state[i] * (i+1)*delta_alpha;
+    R = M / R;
+
+    // First type (with boundary condition)
+    weights[0] = R*eta0*delta_alpha* ((1-mut_rate)*state[0] + mut_rate*2*state[1]);
+    weights[state_dim()] = eta0*(alpha0+delta_alpha)*state[0];
+
+    // Intermediate types
+    for (int i=1; i<state.size()-1; i++) {
+        weights[i] = mut_rate*i*state[i-1]; 
+        weights[i] += (1-2*mut_rate)*(i+1)*state[i]; 
+        weights[i] += mut_rate*(i+2)*state[i+1]; 
+        weights[i] *= R*eta0*delta_alpha;
+
+        weights[state_dim()+i] = eta0*(alpha0+delta_alpha*(i+1))*state[i];
+    }
+
+    // Last type
+    weights[state_dim()-1] = mut_rate*(state_dim()-1)*state[state_dim()-2];
+    weights[state_dim()-1] += (1-mut_rate)*state_dim()*state[state_dim()-1];
+    weights[state_dim()-1] *= R*eta0*delta_alpha;
+    weights[2*state_dim()-1] = eta0*(alpha0+delta_alpha*state_dim())*state[state_dim()-1];
+}
+
+
 endc_f endc_time(int fin_step){
     endc_f endc = endc_f{
         [fin_step](int t, vecd s) {
@@ -246,11 +338,18 @@ GillespieBD* get_gillespieBD(const param& params, std::mt19937& generator) {
     else if (alg_name == "chem2"){
 		return new GillespieChem2(params, generator);
     }
+    else if (alg_name == "chem_evold"){
+		return new GillespieChemEvolDelta0(params, generator);
+    }
+    else if (alg_name == "chem_evole"){
+		return new GillespieChemEvolEta0(params, generator);
+    }
     else throw std::invalid_argument( "Invalid stochastic process name" );
 }
 
 
 void GillespieBD::print_traj(str path) const {
+
     vec2d traj = vec2d(0);
     for (int i=0; i<time_traj.size(); i++) {
         vecd aux_traj = vecd(0);
