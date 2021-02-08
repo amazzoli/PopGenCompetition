@@ -16,17 +16,15 @@ int main(int argc, char** argv) {
     param params = parse_param_file(data_dir + path + "/param.txt"); // Def in utils
 
     GillespieBD* alg = get_gillespieBD(params, generator);
-    for (int i=0; i<params.d.at("N_realizations"); i++){
+    int i_start = params.d.at("r_start");
+    for (int i=i_start; i<i_start+params.d.at("N_realizations"); i++){
         (*alg).run(params);
         (*alg).print_traj(data_dir + path+"/traj"+std::to_string(i)+".txt");
         std::cout << i+1 << "/" << params.d.at("N_realizations") << std::endl;
     }
     //SPEnsemble ensemble = SPEnsemble(alg, params.d.at("N_realizations"));
 
-
-     // Observables to compute ober trajectory
-
-    //ensemble.print_averages(obs, params, data_dir + path + "/obs.txt");
+    delete alg;
 
     return 0;
 }
