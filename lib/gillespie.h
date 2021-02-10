@@ -67,9 +67,9 @@ class GillespieBD : public StocProc {
 class GillespieLV2 : public GillespieBD {
 
     private:
-        /* Pop time scale */
-        double rhos[2];
-        /* Pop fitness */
+        /* Pop growth rate */
+        double gr[2];
+        /* Pop inv fitness */
         double fs[2];
         /* Pop competitive disadvantage */
         double chis[2];
@@ -135,23 +135,21 @@ class GillespieChemEvolDelta0 : public GillespieBD {
     private:
         /* Death rate */
         double delta0;
-        /* Maximum growht rate */
-        double alpha_max;
+        /* Ordered list of the growth rates */
+        vecd alphas;
         /* Mutation rate */
         double mut_rate;
         /* Growth rate constant \ll 1 */
         double alpha0;
         /* Pop size */
         int M;
-        /* Step in the growth rate given by mutation */
-        double delta_alpha;
 
     protected:
         void update_weights(vecd& weights);
 
     public:
         GillespieChemEvolDelta0(const param& params, std::mt19937& generator);
-        const int state_dim() const { return round(alpha_max / delta_alpha); }
+        const int state_dim() const { return alphas.size(); }
 };
 
 
@@ -162,23 +160,21 @@ class GillespieChemEvolEta0 : public GillespieBD {
     private:
         /* Death rate */
         double eta0;
-        /* Maximum growht rate */
-        double alpha_max;
+        /* Ordered list of the growth rates */
+        vecd alphas;
         /* Mutation rate */
         double mut_rate;
         /* Growth rate constant \ll 1 */
         double alpha0;
         /* Pop size */
         int M;
-        /* Step in the growth rate given by mutation */
-        double delta_alpha;
 
     protected:
         void update_weights(vecd& weights);
 
     public:
         GillespieChemEvolEta0(const param& params, std::mt19937& generator);
-        const int state_dim() const { return round(alpha_max / delta_alpha); }
+        const int state_dim() const { return alphas.size(); }
 };
 
 

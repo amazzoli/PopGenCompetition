@@ -82,8 +82,8 @@ void GillespieBD::run(vecd& init_state, endc_f& end_condition, int traj_step) {
 GillespieLV2::GillespieLV2(const param& params, std::mt19937& generator):
 GillespieBD{generator} {
     try{
-        rhos[0] = params.vecd.at("rhos")[0];
-        rhos[1] = params.vecd.at("rhos")[1];
+        gr[0] = params.vecd.at("rhos")[0];
+        gr[1] = params.vecd.at("rhos")[1];
         fs[0] = params.vecd.at("fs")[0];
         fs[1] = params.vecd.at("fs")[1];
         chis[0] = params.vecd.at("chis")[0];
@@ -97,12 +97,12 @@ GillespieBD{generator} {
 
 
 void GillespieLV2::update_weights(vecd& weights) {
-    weights[0] = (fs[0] * rhos[0])*state[0];
-    weights[1] = (fs[1] * rhos[1])*state[1];
+    weights[0] = gr[0]*state[0];
+    weights[1] = gr[1]*state[1];
     double death_coef = 0;
-    for (int i=0; i<2; i++) death_coef += state[i] * chis[i] * fs[i];
-    weights[2] = (rhos[0] * death_coef / M)*state[0];
-    weights[3] = (rhos[1] * death_coef / M)*state[1];
+    for (int i=0; i<2; i++) death_coef += state[i] * chis[i];
+    weights[2] = (gr[0] * death_coef / fs[0] / M)*state[0];
+    weights[3] = (gr[1] * death_coef / fs[1] / M)*state[1];
 }
 
 
@@ -162,10 +162,19 @@ GillespieChemEvolDelta0::GillespieChemEvolDelta0(const param& params, std::mt199
 GillespieBD{generator} {
     try{
         delta0 = params.d.at("delta0");
-        alpha_max = params.d.at("alpha_max");
+
+        if (params.vecd.find("alphas") != params.vecd.end())
+            alphas = params.vecd.at("alphas");
+        else{
+            double delta_alpha = params.d.at("delta_alpha");
+            double alpha_max = params.d.at("alpha_max");
+            alphas = vecd{delta_alpha};
+            while (alphas[alphas.size()-1] < alpha_max)
+                alphas.push_back(alphas[alphas.size()-1]+delta_alpha);
+        }
+
         mut_rate = params.d.at("mut_rate");
         alpha0 = params.d.at("alpha0");
-        delta_alpha = params.d.at("delta_alpha");
         M = params.d.at("M");
     }
     catch (std::exception){
@@ -177,31 +186,31 @@ GillespieBD{generator} {
 void GillespieChemEvolDelta0::update_weights(vecd& weights) {
 
     double R = 0;
-    for (int i=0; i<state.size(); i++) R += state[i] * (i+1)*delta_alpha;
-    R = M / R;
+    for (int i=0; i<state.size(); i++) R += state[i] * alphas[i];
+    R /= M;
 
     // First type (with boundary condition)
-    double eta1 = 1 / (delta_alpha + alpha0);
-    double eta2 = 1 / (2*delta_alpha + alpha0);
-    weights[0] = R * ((1-mut_rate)*eta1*delta_alpha*state[0] + mut_rate*eta2*2*delta_alpha*state[1]);
+    double eta1 = 1.0 / (alphas[0] + alpha0);
+    double eta2 = 1.0 / (alphas[1] + alpha0);
+    weights[0] = ((1-mut_rate)*eta1*alphas[0]*state[0] + mut_rate*eta2*alphas[1]*state[1]) / R;
     weights[state_dim()] = delta0*state[0];
 
     // Intermediate types
     for (int i=1; i<state.size()-1; i++) {
-        weights[i] = mut_rate*eta1*i*delta_alpha*state[i-1]; 
-        weights[i] += (1-2*mut_rate)*eta2*(i+1)*delta_alpha*state[i]; 
+        weights[i] = mut_rate*eta1*alphas[i-1]*state[i-1]; 
+        weights[i] += (1-2*mut_rate)*eta2*alphas[i]*state[i]; 
         eta1 = eta2;
-        eta2 = 1 / ((i+2)*delta_alpha + alpha0);
-        weights[i] += mut_rate*eta2*(i+2)*delta_alpha*state[i+1]; 
-        weights[i] *= R;
+        eta2 = 1.0 / (alphas[i+1] + alpha0);
+        weights[i] += mut_rate*eta2*alphas[i+1]*state[i+1]; 
+        weights[i] /= R;
 
         weights[state_dim()+i] = delta0*state[i];
     }
 
     // Last type
-    weights[state_dim()-1] = mut_rate*eta1*(state_dim()-1)*delta_alpha*state[state_dim()-2];
-    weights[state_dim()-1] += (1-mut_rate)*eta2*(state_dim())*delta_alpha*state[state_dim()-1];
-    weights[state_dim()-1] *= R;
+    weights[state_dim()-1] = mut_rate*eta1*alphas[state_dim()-2]*state[state_dim()-2];
+    weights[state_dim()-1] += (1-mut_rate)*eta2*alphas[state_dim()-1]*state[state_dim()-1];
+    weights[state_dim()-1] /= R;
     weights[2*state_dim()-1] = delta0*state[state_dim()-1];
 }
 
@@ -210,10 +219,19 @@ GillespieChemEvolEta0::GillespieChemEvolEta0(const param& params, std::mt19937& 
 GillespieBD{generator} {
     try{
         eta0 = params.d.at("eta0");
-        alpha_max = params.d.at("alpha_max");
+
+        if (params.vecd.find("alphas") != params.vecd.end())
+            alphas = params.vecd.at("alphas");
+        else{
+            double delta_alpha = params.d.at("delta_alpha");
+            double alpha_max = params.d.at("alpha_max");
+            alphas = vecd{delta_alpha};
+            while (alphas[alphas.size()-1] < alpha_max)
+                alphas.push_back(alphas[alphas.size()-1]+delta_alpha);
+        }
+
         mut_rate = params.d.at("mut_rate");
         alpha0 = params.d.at("alpha0");
-        delta_alpha = params.d.at("delta_alpha");
         M = params.d.at("M");
     }
     catch (std::exception){
@@ -225,28 +243,28 @@ GillespieBD{generator} {
 void GillespieChemEvolEta0::update_weights(vecd& weights) {
 
     double R = 0;
-    for (int i=0; i<state.size(); i++) R += state[i] * (i+1)*delta_alpha;
-    R = M / R;
+    for (int i=0; i<state.size(); i++) R += state[i] * alphas[i];
+    R /= M;
 
     // First type (with boundary condition)
-    weights[0] = R*eta0*delta_alpha* ((1-mut_rate)*state[0] + mut_rate*2*state[1]);
-    weights[state_dim()] = eta0*(alpha0+delta_alpha)*state[0];
+    weights[0] = eta0 * ((1-mut_rate)*alphas[0]*state[0] + mut_rate*alphas[1]*state[1]) / R;
+    weights[state_dim()] = eta0 * (alpha0+alphas[0]) * state[0];
 
     // Intermediate types
     for (int i=1; i<state.size()-1; i++) {
-        weights[i] = mut_rate*i*state[i-1]; 
-        weights[i] += (1-2*mut_rate)*(i+1)*state[i]; 
-        weights[i] += mut_rate*(i+2)*state[i+1]; 
-        weights[i] *= R*eta0*delta_alpha;
+        weights[i] = mut_rate*alphas[i-1]*state[i-1]; 
+        weights[i] += (1-2*mut_rate)*alphas[i]*state[i]; 
+        weights[i] += mut_rate*alphas[i+1]*state[i+1]; 
+        weights[i] *= eta0/R;
 
-        weights[state_dim()+i] = eta0*(alpha0+delta_alpha*(i+1))*state[i];
+        weights[state_dim()+i] = eta0*(alpha0+alphas[i])*state[i];
     }
 
     // Last type
-    weights[state_dim()-1] = mut_rate*(state_dim()-1)*state[state_dim()-2];
-    weights[state_dim()-1] += (1-mut_rate)*state_dim()*state[state_dim()-1];
-    weights[state_dim()-1] *= R*eta0*delta_alpha;
-    weights[2*state_dim()-1] = eta0*(alpha0+delta_alpha*state_dim())*state[state_dim()-1];
+    weights[state_dim()-1] = mut_rate*alphas[state_dim()-2]*state[state_dim()-2];
+    weights[state_dim()-1] += (1-mut_rate)*alphas[state_dim()-1]*state[state_dim()-1];
+    weights[state_dim()-1] *= eta0/R;
+    weights[2*state_dim()-1] = eta0*(alpha0+alphas[state_dim()-1])*state[state_dim()-1];
 }
 
 
