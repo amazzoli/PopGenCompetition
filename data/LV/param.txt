@@ -1,10 +1,10 @@
 process_type	lv2
 rhos	2,1,
-chis	1,1,
-fs	1.01,1,
+chis	1,2,
+fs	1.002,1,
 M	2000
 end_cond	time
-max_steps	2000000
-traj_step	10
+max_steps	1000000
+traj_step	100
 init_state	100,300,
-N_realizations	10
+N_realizations	1
