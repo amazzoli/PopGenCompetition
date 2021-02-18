@@ -13,7 +13,7 @@ vec2d generate_init_cond(SPEnsemble* ensemble, param& params, int relax_step, in
 
     vec2d init_cond = vec2d(N_init_cond, vecd(0));
     for (int r=0; r<N_init_cond; r++) {
-        std::cout << std::get<1>(init_cond_t)[r][1] << "\n";
+        //std::cout << std::get<1>(init_cond_t)[r][1] << "\n";
         init_cond[r] = vecd{ 1.0, std::get<1>(init_cond_t)[r][1] };
     }
     return init_cond;
