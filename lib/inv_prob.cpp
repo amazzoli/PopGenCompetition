@@ -8,11 +8,12 @@ vec2d generate_init_cond(SPEnsemble* ensemble, param& params, int relax_step, in
     params.d["max_steps"] = relax_step;
 
     // Initial conditions at carrying capacity of the second species
-    params.vecd["init_state"] = vecd { 0.0, params.d.at("carrying_cap") };
+    params.vecd["init_state"] = vecd { 0.0, (double)((int)params.d.at("carrying_cap")) };
     std::tuple<vecd, vec2d> init_cond_t = (*ensemble).get_final_states(params);
 
     vec2d init_cond = vec2d(N_init_cond, vecd(0));
     for (int r=0; r<N_init_cond; r++) {
+        std::cout << std::get<1>(init_cond_t)[r][1] << "\n";
         init_cond[r] = vecd{ 1.0, std::get<1>(init_cond_t)[r][1] };
     }
     return init_cond;
@@ -31,23 +32,27 @@ InvProbInfo build_inv_prob_info(SPEnsemble* ensemble, param& params, vec2d& init
     for (int k=0; k<thresholds.size(); k++) {
 
         // Change the end condition of the process
-        params.vecd["up_bound"] = vecd { thresholds[k] , 1000000 };
+        params.vecd["up_bound"] = vecd { (double)((int)thresholds[k]) , 1000000 };
 
         // Run the processes until first passage at one of the boundaries
         std::tuple<vecd, vec2d> out = (*ensemble).get_final_states(params, init_cond);
         
         // Update all the observables
         vec2d aux_init_cond = vec2d(0);
+
+        std::cout << "\n";
         vecd time0p = vecd(0), timemi = vecd(0), time0i = vecd(0);
         for (int i=0; i<T; i++){
 
+            std::cout << "Res: " << std::get<1>(out)[i][1] << " Inv: " << std::get<1>(out)[i][0] << "\n";
+
             // Extinction of the resident population
-            if (std::get<1>(out)[i][1] == 0) time0p.push_back(std::get<0>(out)[i]);
+            if (std::get<1>(out)[i][1] <= 0) time0p.push_back(std::get<0>(out)[i]);
 
             // Threshold hit by the invaders
-            else if (std::get<1>(out)[i][0] == thresholds[k]) {
+            else if (std::get<1>(out)[i][0] >= thresholds[k]) {
                 timemi.push_back(std::get<0>(out)[i]);
-                aux_init_cond.push_back( vecd { thresholds[k], std::get<1>(out)[i][1] } );
+                aux_init_cond.push_back( vecd { (double)((int)thresholds[k]), (double)((int)std::get<1>(out)[i][1]) } );
             }
 
             // Extinction of the invaders
@@ -60,16 +65,18 @@ InvProbInfo build_inv_prob_info(SPEnsemble* ensemble, param& params, vec2d& init
         info.timem_inv.push_back(timemi);
         info.time0_inv.push_back(time0i);
 
-        std::cout << "Cycle " << k << " starts, threshold: " << thresholds[k] << ", resident_ext: " << time0p.size() << "\n";
+        std::cout << "Cycle " << k << " starts, threshold: " << thresholds[k] << ", res_ext: " << time0p.size() << ", inv_passed: " << timemi.size();
 
         if (timemi.size() == 0) break;
 
         // Amplify the next initial conditions by sampling from the final conditions of invaredrs at threshold
-        init_cond = aux_init_cond;
-        for (int k=aux_init_cond.size(); k<T; k++){
-            std::uniform_int_distribution<int> dist(0, aux_init_cond.size()-1);
-            init_cond.push_back(aux_init_cond[dist(generator)]);
+        double av_pop2 = 0;
+        std::uniform_int_distribution<int> dist(0, aux_init_cond.size()-1);
+        for (int k=0; k<T; k++){
+            init_cond[k] = aux_init_cond[dist(generator)];
+            av_pop2 += init_cond[k][1] / double(T);
         }
+        std::cout << ", av_pop2 :"  << av_pop2 << "\n"; 
     }
 
     return info;

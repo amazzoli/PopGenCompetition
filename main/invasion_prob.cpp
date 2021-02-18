@@ -8,8 +8,9 @@ int main(int argc, char** argv) {
     if (argc != 2) throw std::runtime_error("Parameter path must be passed during execution");
 
     // Init random generator
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::mt19937 generator(seed);
+    //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::cout << "\nWarning: fixed seed\n";
+    std::mt19937 generator(1);
 
     std::string path(argv[1]), data_dir = "../data/";
     std::string full_dir = data_dir + path + "/";
@@ -20,7 +21,7 @@ int main(int argc, char** argv) {
     GillespieBD* alg;
     SPEnsemble* ensemble;
     Timer time;
-    for (int pr=7; pr<=n_processes; pr++) {
+    for (int pr=1; pr<=n_processes; pr++) {
         
         // Parameters
         param params = parse_param_file(full_dir + std::to_string(pr) + "_param.txt");
