@@ -40,11 +40,11 @@ InvProbInfo build_inv_prob_info(SPEnsemble* ensemble, param& params, vec2d& init
         // Update all the observables
         vec2d aux_init_cond = vec2d(0);
 
-        std::cout << "\n";
+        //std::cout << "\n";
         vecd time0p = vecd(0), timemi = vecd(0), time0i = vecd(0);
         for (int i=0; i<T; i++){
 
-            std::cout << "Res: " << std::get<1>(out)[i][1] << " Inv: " << std::get<1>(out)[i][0] << "\n";
+            //std::cout << "Res: " << std::get<1>(out)[i][1] << " Inv: " << std::get<1>(out)[i][0] << "\n";
 
             // Extinction of the resident population
             if (std::get<1>(out)[i][1] <= 0) time0p.push_back(std::get<0>(out)[i]);
@@ -67,7 +67,11 @@ InvProbInfo build_inv_prob_info(SPEnsemble* ensemble, param& params, vec2d& init
 
         std::cout << "Cycle " << k << " starts, threshold: " << thresholds[k] << ", res_ext: " << time0p.size() << ", inv_passed: " << timemi.size();
 
-        if (timemi.size() == 0) break;
+        if (timemi.size() == 0)
+        {
+            std::cout << "\n";
+            break;
+        } 
 
         // Amplify the next initial conditions by sampling from the final conditions of invaredrs at threshold
         double av_pop2 = 0;
