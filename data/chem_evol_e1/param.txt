@@ -10,4 +10,4 @@ max_steps	600000000
 traj_step	300000.0
 init_state	0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,200.0,
 r_start	0
-N_realizations	15
+N_realizations	30
