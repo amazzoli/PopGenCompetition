@@ -1,0 +1,13 @@
+process_type	chem_evole
+eta0	1
+alpha0	0.01
+M	200
+mut_rate	2e-05
+alpha_max	3.0
+delta_alpha	0.25
+end_cond	time
+max_steps	600000000
+traj_step	300000.0
+init_state	0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,200.0,
+r_start	0
+N_realizations	15
